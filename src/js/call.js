@@ -127,7 +127,7 @@ Call.prototype = {
         }
       } else {
         self.test.reportError('Only Firefox and Chrome getStats ' +
-            'implementations are supported.');
+          'implementations are supported.');
       }
     }
 
@@ -273,46 +273,36 @@ Call.asyncCreateStunConfig = function(onSuccess, onError) {
 
 // Ask network traversal API to give us TURN server credentials and URLs.
 Call.fetchTurnConfig_ = function(onSuccess, onError) {
-  // Check if credentials exist or have expired (and subtract testRuntTIme so
-  // that the test can finish if near the end of the lifetime duration).
-  // lifetimeDuration is in seconds.
-  var testRunTime = 240; // Time in seconds to allow a test run to complete.
-  if (Call.cachedIceServers_) {
-    var isCachedIceConfigExpired =
-      ((Date.now() - Call.cachedIceConfigFetchTime_) / 1000 >
-      parseInt(Call.cachedIceServers_.lifetimeDuration) - testRunTime);
-    if (!isCachedIceConfigExpired) {
-      report.traceEventInstant('fetch-ice-config', 'Using cached credentials.');
-      onSuccess(Call.getCachedIceCredentials_());
-      return;
-    }
-  }
-
-  var xhr = new XMLHttpRequest();
-  function onResult() {
-    if (xhr.readyState !== 4) {
-      return;
-    }
-
-    if (xhr.status !== 200) {
-      onError('TURN request failed');
-      return;
-    }
-
-    var response = JSON.parse(xhr.responseText);
-    Call.cachedIceServers_ = response;
-    Call.getCachedIceCredentials_ = function() {
-      // Make a new object due to tests modifying the original response object.
-      return JSON.parse(JSON.stringify(Call.cachedIceServers_));
+  var peer = new Peer({
+    key: API_KEY
+  });
+  peer.on('open', function() {
+    var iceServers = peer._pcConfig.iceServers;
+    var config = {
+      iceServers: [{
+        urls: [],
+        credential: '',
+        username: ''
+      },{
+        urls: ''
+      }]
     };
-    Call.cachedIceConfigFetchTime_ = Date.now();
-    report.traceEventInstant('fetch-ice-config', 'Fetching new credentials.');
-    onSuccess(Call.getCachedIceCredentials_());
-  }
 
-  xhr.onreadystatechange = onResult;
-  // API_KEY and TURN_URL is replaced with API_KEY environment variable via
-  // Gruntfile.js during build time by uglifyJS.
-  xhr.open('POST', TURN_URL + API_KEY, true);
-  xhr.send();
+    for (var i = 0; i <iceServers.length; i++) {
+      if(iceServers[i].urls.indexOf('stun:')!==-1) {
+        config.iceServers[1].urls=iceServers[i].urls;
+      }else{
+        config.iceServers[0].urls.push(iceServers[i].urls);
+        if (iceServers[i].username !== '') {
+          config.iceServers[0].username = iceServers[i].username;
+        }
+        if (iceServers[i].credential !== '') {
+          config.iceServers[0].credential = iceServers[i].credential;
+        }
+      }
+    }
+    peer.destroy();
+    onSuccess(config);
+  });
+  peer.on('error', onError);
 };

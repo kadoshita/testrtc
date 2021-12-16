@@ -74,5 +74,6 @@
     "setTimeoutWithProgressBar": true,
     "ga": true,
     "module": true,
+    "Peer": true
   }
 }

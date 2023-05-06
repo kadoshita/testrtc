@@ -273,36 +273,14 @@ Call.asyncCreateStunConfig = function(onSuccess, onError) {
 
 // Ask network traversal API to give us TURN server credentials and URLs.
 Call.fetchTurnConfig_ = function(onSuccess, onError) {
-  var peer = new Peer({
-    key: API_KEY
-  });
-  peer.on('open', function() {
-    var iceServers = peer._pcConfig.iceServers;
-    var config = {
-      iceServers: [{
-        urls: [],
-        credential: '',
-        username: ''
-      },{
-        urls: ''
-      }]
-    };
-
-    for (var i = 0; i <iceServers.length; i++) {
-      if(iceServers[i].urls.indexOf('stun:')!==-1) {
-        config.iceServers[1].urls=iceServers[i].urls;
-      }else{
-        config.iceServers[0].urls.push(iceServers[i].urls);
-        if (iceServers[i].username !== '') {
-          config.iceServers[0].username = iceServers[i].username;
-        }
-        if (iceServers[i].credential !== '') {
-          config.iceServers[0].credential = iceServers[i].credential;
-        }
-      }
-    }
-    peer.destroy();
-    onSuccess(config);
-  });
-  peer.on('error', onError);
+  fetch(API_ENDPOINT)
+      .then(function(res) {
+        return res.json();
+      })
+      .then(function(config) {
+        return onSuccess(config);
+      })
+      .catch(function(error) {
+        onError(error);
+      });
 };

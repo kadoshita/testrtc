@@ -68,12 +68,11 @@
     "Ssim": true,
     "VideoFrameChecker": true,
     "StatisticsAggregate": true,
-    "API_KEY": true,
+    "API_ENDPOINT": true,
     "doGetUserMedia": true,
     "Call": true,
     "setTimeoutWithProgressBar": true,
     "ga": true,
-    "module": true,
-    "Peer": true
+    "module": true
   }
 }

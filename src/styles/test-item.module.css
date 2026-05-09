@@ -1,0 +1,70 @@
+.test {
+  margin: 0;
+}
+
+.header {
+  background-color: transparent;
+  height: 2.5em;
+  display: flex;
+  padding-left: 1em;
+  padding-right: 1em;
+  align-items: center;
+  cursor: pointer;
+  font-size: 1.1em;
+  user-select: none;
+}
+
+.header .title {
+  flex: 1;
+  font-weight: 300;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header .icon {
+  font-size: 1em;
+}
+
+.test[data-state='success'] .icon {
+  color: #080;
+}
+
+.test[data-state='failure'] .icon {
+  color: #f00;
+}
+
+.progress {
+  width: 100px;
+  height: 6px;
+  background: #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-right: 0.5em;
+}
+
+.progressBar {
+  height: 100%;
+  background: #4F7DC9;
+  transition: width 0.1s;
+}
+
+.collapse {
+  padding-bottom: 0.5em;
+  overflow: hidden;
+}
+
+.collapse.collapsed {
+  display: none;
+}
+
+.output {
+  margin: 0 2em;
+  word-wrap: break-word;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+.plot {
+  margin: 0 2em;
+}

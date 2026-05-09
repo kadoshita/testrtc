@@ -4,3 +4,7 @@ components
 firefox*
 node_modules
 out
+
+# Bower components (replaced by npm)
+components/
+dist/

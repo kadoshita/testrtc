@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import { resolve } from 'path';
 
 export default defineConfig({
@@ -8,10 +8,6 @@ export default defineConfig({
   build: {
     outDir: '../dist',
     emptyOutDir: true,
-    define: {
-      'API_ENDPOINT': JSON.stringify(process.env.API_ENDPOINT ?? ''),
-      'TURN_URL': JSON.stringify('https://networktraversal.googleapis.com/v1alpha/iceconfig?key='),
-    },
   },
   define: {
     'API_ENDPOINT': JSON.stringify(process.env.API_ENDPOINT ?? ''),

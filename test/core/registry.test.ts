@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { addTest, addExplicitTest, getTestSuites, resetRegistry, initFilters } from '../../src/tests/registry.js';
 
 describe('registry', () => {

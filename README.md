@@ -76,3 +76,23 @@ grunt build
 ```bash
 python dev_appserver.py out/app.yml
 ```
+
+## Current test and CI workflow
+
+Use the following commands in local development:
+
+```bash
+npm run typecheck
+npm test
+npm run test:e2e
+```
+
+- `npm test` runs unit tests with Vitest.
+- `npm run test:e2e` runs browser smoke tests with **Vitest Browser Mode + Playwright (Chromium)**.
+
+GitHub Actions runs tests on:
+
+- `pull_request`
+- `push` to `master`
+
+Deploy workflow runs only after the CI workflow on `master` succeeds.

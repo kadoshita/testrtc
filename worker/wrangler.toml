@@ -1,0 +1,13 @@
+name = "testrtc-api"
+main = "src/index.ts"
+compatibility_date = "2024-05-09"
+
+[env.production]
+vars = { ALLOWED_ORIGINS = "*" }
+
+# Environment variables:
+# - SKYWAY_APP_ID: Set via 'wrangler secret put SKYWAY_APP_ID'
+# - SKYWAY_SECRET_KEY: Set via 'wrangler secret put SKYWAY_SECRET_KEY'
+# - ALLOWED_ORIGINS: CORS Access-Control-Allow-Origin header value (default: "*")
+#   Examples: "*", "https://example.com", "https://example.com https://another.com"
+

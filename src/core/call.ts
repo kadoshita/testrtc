@@ -253,7 +253,13 @@ export class Call {
     onSuccess: (config: unknown) => void,
     onError: (error: string) => void
   ): void {
-    fetch(API_ENDPOINT)
+    fetch(API_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: '{}',
+    })
       .then((res) => res.json())
       .then((data: unknown) => onSuccess(data))
       .catch((e: unknown) => onError(e instanceof Error ? e.message : String(e)));

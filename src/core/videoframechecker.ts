@@ -33,7 +33,7 @@ export class VideoFrameChecker {
   private getCurrentImageData(): ImageData {
     this.canvas.width = this.videoElement.width;
     this.canvas.height = this.videoElement.height;
-    const context = this.canvas.getContext('2d')!;
+    const context = this.canvas.getContext('2d', { willReadFrequently: true })!;
     context.drawImage(this.videoElement, 0, 0, this.canvas.width, this.canvas.height);
     return context.getImageData(0, 0, this.canvas.width, this.canvas.height);
   }

@@ -3,6 +3,11 @@ import { testSuiteName } from './testsuitename.js';
 import { testCaseName } from './testcasename.js';
 import type { TestInterface } from '../types/index.js';
 
+interface AudioWorkletPayload {
+  channels: Float32Array[];
+  sampleRate: number;
+}
+
 addTest(testSuiteName.MICROPHONE, testCaseName.AUDIOCAPTURE, (test) => {
   const micTest = new MicTest(test);
   micTest.run();
@@ -26,6 +31,7 @@ class MicTest {
   private audioContext: AudioContext;
   private stream?: MediaStream;
   private audioSource?: MediaStreamAudioSourceNode;
+  private workletNode?: AudioWorkletNode;
   private scriptNode?: ScriptProcessorNode;
   private stopCollectingAudio?: () => void;
 
@@ -59,7 +65,7 @@ class MicTest {
       this.test.done();
       return;
     }
-    this.createAudioBuffer(stream);
+    void this.createAudioBuffer(stream);
   }
 
   private checkAudioTracks(stream: MediaStream): boolean {
@@ -73,17 +79,79 @@ class MicTest {
     return true;
   }
 
-  private createAudioBuffer(stream: MediaStream): void {
+  private async createAudioBuffer(stream: MediaStream): Promise<void> {
     this.audioSource = this.audioContext.createMediaStreamSource(stream);
+    if (typeof AudioWorkletNode !== 'undefined' && this.audioContext.audioWorklet) {
+      try {
+        await this.audioContext.audioWorklet.addModule(
+          new URL('./audio-level-processor.js', import.meta.url).toString()
+        );
+        this.workletNode = new AudioWorkletNode(this.audioContext, 'testrtc-audio-level-processor', {
+          numberOfInputs: 1,
+          numberOfOutputs: 1,
+          outputChannelCount: [this.outputChannelCount],
+        });
+        this.workletNode.port.onmessage = (event: MessageEvent<AudioWorkletPayload>) => {
+          this.collectAudioFromWorklet(event.data);
+        };
+        this.audioSource.connect(this.workletNode);
+        this.workletNode.connect(this.audioContext.destination);
+        this.stopCollectingAudio = setTimeoutWithProgressBar(
+          this.onStopCollectingAudio.bind(this), 5000, this.test
+        );
+        return;
+      } catch (error: unknown) {
+        this.test.reportWarning(
+          'AudioWorklet initialization failed. Falling back to ScriptProcessorNode: ' + String(error)
+        );
+      }
+    }
+    this.createScriptProcessorBuffer();
+  }
+
+  private createScriptProcessorBuffer(): void {
+    const source = this.audioSource!;
     this.scriptNode = this.audioContext.createScriptProcessor(
       this.bufferSize, this.inputChannelCount, this.outputChannelCount
     );
-    this.audioSource.connect(this.scriptNode);
+    source.connect(this.scriptNode);
     this.scriptNode.connect(this.audioContext.destination);
     this.scriptNode.onaudioprocess = this.collectAudio.bind(this);
     this.stopCollectingAudio = setTimeoutWithProgressBar(
       this.onStopCollectingAudio.bind(this), 5000, this.test
     );
+  }
+
+  private collectAudioFromWorklet(payload: AudioWorkletPayload): void {
+    const sampleCount = payload.channels[0]?.length ?? 0;
+    if (sampleCount === 0) {
+      return;
+    }
+    let allSilent = true;
+    for (let c = 0; c < this.inputChannelCount; c++) {
+      const data = payload.channels[c] ?? new Float32Array();
+      let newBuffer: Float32Array;
+      if (data.length > 0) {
+        const first = Math.abs(data[0]);
+        const last = Math.abs(data[sampleCount - 1]);
+        if (first > this.silentThreshold || last > this.silentThreshold) {
+          newBuffer = new Float32Array(sampleCount);
+          newBuffer.set(data);
+          allSilent = false;
+        } else {
+          newBuffer = new Float32Array();
+        }
+      } else {
+        newBuffer = new Float32Array();
+      }
+      this.collectedAudio[c].push(newBuffer);
+    }
+    if (!allSilent) {
+      this.collectedSampleCount += sampleCount;
+      if (this.collectedSampleCount / payload.sampleRate >= this.collectSeconds) {
+        this.stopCollectingAudio?.();
+      }
+    }
   }
 
   private collectAudio(event: AudioProcessingEvent): void {
@@ -113,8 +181,15 @@ class MicTest {
 
   private onStopCollectingAudio(): void {
     this.stream?.getAudioTracks()[0].stop();
-    this.audioSource?.disconnect(this.scriptNode!);
-    this.scriptNode?.disconnect(this.audioContext.destination);
+    this.audioSource?.disconnect();
+    if (this.scriptNode) {
+      this.scriptNode.onaudioprocess = null;
+      this.scriptNode.disconnect();
+    }
+    if (this.workletNode) {
+      this.workletNode.port.onmessage = null;
+      this.workletNode.disconnect();
+    }
     this.analyzeAudio(this.collectedAudio);
     this.test.done();
   }

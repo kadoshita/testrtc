@@ -31,6 +31,16 @@ const getCorsHeaders = (env: Env): Record<string, string> => {
 export default {
     async fetch(request: Request, env: Env): Promise<Response> {
         const corsHeaders = getCorsHeaders(env);
+        const { pathname } = new URL(request.url);
+        if (pathname !== "/" && pathname !== "/api/turn") {
+            return new Response(JSON.stringify({ error: "Not Found" }), {
+                status: 404,
+                headers: {
+                    "Content-Type": "application/json",
+                    ...corsHeaders,
+                },
+            });
+        }
 
         if (request.method === "OPTIONS") {
             return new Response(null, { headers: corsHeaders });

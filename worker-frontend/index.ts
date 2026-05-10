@@ -5,6 +5,7 @@ const assetManifest = JSON.parse(manifestJSON);
 
 interface Env {
     __STATIC_CONTENT: KVNamespace;
+    API_WORKER: Fetcher;
 }
 
 export default {
@@ -13,6 +14,11 @@ export default {
         env: Env,
         ctx: ExecutionContext
     ): Promise<Response> {
+        const { pathname } = new URL(request.url);
+        if (pathname === "/api/turn" || pathname.startsWith("/api/")) {
+            return env.API_WORKER.fetch(request);
+        }
+
         try {
             return await getAssetFromKV(
                 { request, waitUntil: ctx.waitUntil.bind(ctx) },

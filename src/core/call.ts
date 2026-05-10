@@ -253,7 +253,8 @@ export class Call {
     onSuccess: (config: unknown) => void,
     onError: (error: string) => void
   ): void {
-    fetch(API_ENDPOINT, {
+    const endpoint = API_ENDPOINT || '/api/turn';
+    fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
